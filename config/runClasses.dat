@@ -1,0 +1,34 @@
+#!/bin/bash
+#######################################
+# Execute scripts into remote machines
+#######################################
+
+echo "Executing Script into node$1"
+if [ "$1" == "" ] ; then
+	echo "ERROR: Sintax: $0 node_number $HOME"
+	exit
+fi
+if [ "$2" == "" ] ; then
+	echo "ERROR: Sintax: $0 node_number $HOME"
+	exit
+fi
+
+# Change to directory home
+homedir="$2"
+
+if [ "$homedir" == "" ] ; then
+	echo "ERROR: Home directory not found"
+	exit
+fi
+cd $homedir
+
+# Find the number of nodes to work
+n_nodes=`grep n_nodes config/config.dat|cut -f2 -d'='`
+
+###############################################################################
+# Clusterizing all files into clusters
+# Comment or uncomment this line for a split process
+echo "Next Step: Clustering"
+./cClass.sh $1
+echo "ClassEnd $0 script"
+

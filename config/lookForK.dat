@@ -1,0 +1,70 @@
+#!/bin/bash
+#######################################
+# Execute scripts into remote machines
+#######################################
+
+echo "Executing Script into node$1"
+if [ "$1" == "" ] ; then
+	echo "ERROR: Sintax: $0 node_number $HOME"
+	exit
+fi
+if [ "$2" == "" ] ; then
+	echo "ERROR: Sintax: $0 node_number $HOME"
+	exit
+fi
+
+# Change to directory home
+homedir="$2"
+
+if [ "$homedir" == "" ] ; then
+	echo "ERROR: Home directory not found"
+	exit
+fi
+cd $homedir
+
+# Find the number of nodes to work
+n_nodes=`grep n_nodes config/config.dat|cut -f2 -d'='`
+
+#remove control node execution for first node
+if [ -f nodes/node$1.ctl ] ; then
+	rm nodes/node$1.ctl
+fi
+if [ -f nodes/finishNodes ] ; then
+	touch nodes/finishNodes
+fi
+###############################################################################
+# Locking for a good number of clusters
+# Comment or uncomment those lines for distributed or single process
+
+echo "`date` - $0: Looking for K Centroids sugestion"
+./lookForK.sh $1 5
+
+#Lock all machines that job finished, wait for another
+echo "$1" >> temp/lock.node$1
+echo "`date` - $0: node $1 waiting for other guys"
+while :
+	do
+	echo -e "`date` - $0: nodes done:\n`ls temp|grep lock`"
+	sleep 10	
+	scape=`ls temp|grep lock|wc -l`
+	if [ $scape -eq $n_nodes  ] ; then
+		break
+	fi
+	done
+echo "Done-$1"
+if [ -f temp/lock.nodes$1 ] ; then
+	rm temp/lock.nodes$1
+fi
+if [ -f config/distribution.dat ] ; then
+	rm config/distribution.dat
+fi
+touch config/distribution.dat
+for dist in `seq 1 $1`
+	do
+	cat config/distribution$1.dat >> config/distribution.dat
+	#rm config/distribution$1.dat
+	done
+if [ "$1" == "1" ] ; then
+	rm index/zeroCentroid.ctr
+fi
+#./plotDistribution.sh 0
